@@ -1,21 +1,33 @@
 language: generic
 
+branches:
+  only:
+  - master
+  - develop
+
 matrix:
   include:
     - os: osx
       env: JOB=SwiftPM_OSX SWIFT_VERSION=3.1
       osx_image: xcode8.3
+      before_install:
+        - brew update
+        - brew install mongo-c
+        - npm install newman --global
+      install:
+        - travis_retry eval "$(curl -sL https://gist.githubusercontent.com/kylef/5c0475ff02b7c7671d2a/raw/9f442512a46d7a2af7b850d65a7e9bd31edfb09b/swiftenv-install.sh)"
+      script:
+        - ./Scripts/test.sh
 
     - os: linux
       env: JOB=SwiftPM_linux SWIFT_VERSION=3.1
       dist: trusty
       sudo: required
+      services:
+       - docker
       before_install:
-       - sudo apt-get install libssl-dev uuid-dev
-
-install:
-  -  travis_retry eval "$(curl -sL https://gist.githubusercontent.com/kylef/5c0475ff02b7c7671d2a/raw/9f442512a46d7a2af7b850d65a7e9bd31edfb09b/swiftenv-install.sh)"
-
-script:
-  - swift build
-
+       - docker pull sportlabs/perfectserver
+      script:
+       - cd Perfect-Authorization
+       - PWDIR=`pwd`
+       - docker run --privileged -i -t -v $PWDIR:/Perfect-Authorization sportlabs/perfectserver /bin/bash -c "cd Perfect-Authorization; swift build"
